@@ -86,29 +86,41 @@ rates and the configured fees.
 - [ ] Throws if either currency is not in `rates`
 - [ ] Unit tests cover all three cases and the error case (`npm test` passes)
 
-### US-007: Converter tab — form
+### US-007: Conversion breakdown — pure function
+**Description:** As a developer, I need a pure function that applies the fee formula and returns a full numeric breakdown so that the Converter component stays thin and the logic is unit-testable.
+
+**Acceptance Criteria:**
+- [ ] `src/utils/conversion.ts` exports `calculateConversion(amount: number, fee: number, rate: number): ConversionBreakdown`
+- [ ] `ConversionBreakdown` shape: `{ originalAmount, fee, feeAmount, amountAfterFee, rate, result }` — all `number`, no formatted strings
+- [ ] Formula: `feeAmount = amount * fee`, `amountAfterFee = amount - feeAmount`, `result = amountAfterFee * rate`
+- [ ] Function is pure: no side effects, no imports from React/Zustand/ECB service
+- [ ] Unit tests cover: standard case, default fee (0.01), fee = 0, same-currency (rate = 1)
+- [ ] `npm run typecheck` passes, `npm test` passes
+
+### US-008: Converter tab — form
 **Description:** As a user, I want to enter an amount, select From and To currencies, and see the converted result so that I can calculate conversions with fees applied.
 
 **Acceptance Criteria:**
-- [ ] "Converter" tab has: Amount input (numeric), From currency selector, To currency selector, Convert button
-- [ ] Currency selectors are populated from the live ECB rates response (all supported currencies)
+- [ ] "Converter" tab fetches ECB rates on mount (`useEffect`) and stores them in local component state
+- [ ] Currency selectors are populated from the loaded rates response (all ECB-supported currencies); selectors are disabled while rates are loading
 - [ ] EUR is pre-selected as the default From currency; USD as default To
 - [ ] Amount input rejects non-numeric input; shows validation message if empty on submit
-- [ ] Clicking Convert triggers `fetchRates()`, derives rate, looks up fee, applies formula
+- [ ] Clicking Convert uses already-loaded rates — no new fetch on click; derives rate via `deriveRate`, looks up fee via `getFee`, calls `calculateConversion`
 - [ ] `npm run typecheck` passes
 
-### US-008: Converter tab — result display
+### US-009: Converter tab — result display
 **Description:** As a user, I want to see the conversion result with a breakdown of the fee applied so that I understand the calculation.
 
 **Acceptance Criteria:**
-- [ ] Result section shows: original amount, fee % applied, amount after fee deduction, final converted amount with currency symbol
-- [ ] Example: "100 EUR → 84.50 GBP (fee: 1%, after fee: 99 EUR, rate: 0.8535)"
-- [ ] While fetching rates a loading indicator is shown; the Convert button is disabled
-- [ ] If fetch fails an error message is shown (not a crash)
+- [ ] Result section renders a `ConversionBreakdown` object: original amount, fee %, fee amount, amount after fee, rate, final result with currency symbol
+- [ ] Example: "100 EUR → 84.50 GBP (fee: 1%, fee amount: 1 EUR, after fee: 99 EUR, rate: 0.8535)"
+- [ ] Formatting (symbols, decimals, percentages) lives in the component/formatter layer — not in `calculateConversion`
+- [ ] While rates are loading on mount a spinner is shown and the Convert button is disabled
+- [ ] If the rates fetch fails an error message is shown inline (not a crash)
 - [ ] Converting the same currency to itself (e.g. EUR → EUR) still works (rate = 1)
 - [ ] Verify in browser: result renders correctly for EUR→USD, GBP→USD, and JPY→CHF
 
-### US-009: Docker setup
+### US-010: Docker setup
 **Description:** As a reviewer, I want to run the app with a single Docker command so that I can evaluate it without installing Node locally.
 
 **Acceptance Criteria:**
@@ -118,7 +130,7 @@ rates and the configured fees.
 - [ ] The Vite proxy is replaced by an nginx `proxy_pass` for the ECB endpoint in production
 - [ ] App is fully functional inside Docker (no localhost-only assumptions)
 
-### US-010: README
+### US-011: README
 **Description:** As a reviewer, I want clear instructions for running and testing the app so that I can evaluate the submission without guessing.
 
 **Acceptance Criteria:**
@@ -134,13 +146,14 @@ rates and the configured fees.
 - **FR-1:** Fee storage shape is `Record<string, Record<string, number>>` keyed `fees[from][to]`
 - **FR-2:** `getFee(from, to)` returns the stored fee or `0.01` if not configured
 - **FR-3:** Fees are persisted to localStorage under key `currency-fees` via Zustand persist
-- **FR-4:** Conversion formula: `result = (amount - amount * fee) * rate`
-- **FR-5:** Exchange rates are fetched from ECB via `/ecb-rates` Vite proxy; `EUR` base = 1
-- **FR-6:** Cross-currency rate: `rate(X→Y) = (1 / rates[X]) * rates[Y]`
-- **FR-7:** All supported ECB currencies are available in the Converter selectors
-- **FR-8:** Currency metadata provides symbol and name; unknown codes fall back to the ISO code
-- **FR-9:** The Vite proxy target is `https://www.ecb.europa.eu`; in Docker, nginx handles the proxy
-- **FR-10:** `npm test` runs unit tests; `npm run typecheck` runs `tsc --noEmit`
+- **FR-4:** `calculateConversion(amount, fee, rate)` returns `ConversionBreakdown` with raw numbers only — no formatted strings
+- **FR-5:** Conversion formula: `feeAmount = amount * fee`, `amountAfterFee = amount - feeAmount`, `result = amountAfterFee * rate`
+- **FR-6:** Exchange rates are fetched from ECB on Converter mount; selectors are populated from the loaded rates; Convert uses already-loaded rates without re-fetching
+- **FR-7:** Cross-currency rate: `rate(X→Y) = (1 / rates[X]) * rates[Y]`
+- **FR-8:** All supported ECB currencies are available in the Converter selectors
+- **FR-9:** Currency metadata provides symbol and name; unknown codes fall back to the ISO code
+- **FR-10:** The Vite proxy target is `https://www.ecb.europa.eu`; in Docker, nginx handles the proxy
+- **FR-11:** `npm test` runs unit tests; `npm run typecheck` runs `tsc --noEmit`
 
 ---
 
@@ -218,6 +231,7 @@ src/
     feeStore.ts         # Zustand store with persist
   utils/
     rates.ts            # deriveRate() pure function
+    conversion.ts       # calculateConversion() pure function + ConversionBreakdown type
   components/
     FeeManager/
       FeeTable.tsx
@@ -241,7 +255,7 @@ vite.config.ts
 ## Success Metrics
 
 - `npm run dev` → app loads, both tabs render without console errors
-- `npm test` → all unit tests pass (at minimum: `deriveRate` + `getFee`)
+- `npm test` → all unit tests pass (at minimum: `deriveRate`, `calculateConversion`, `getFee`)
 - `npm run typecheck` → zero type errors
 - `docker build && docker run` → app accessible on port 8080, conversion works end-to-end
 
