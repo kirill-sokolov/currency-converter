@@ -45,7 +45,7 @@ export function AddFeeForm({ rates, ratesLoading, ratesError, retryRates }: AddF
     setFeeInput('')
   }
 
-  const currencyLabel = (code: string) => `${getSymbol(code)} ${code} — ${getName(code)}`
+  const currencyLabel = (code: string) => `${getSymbol(code)} ${getName(code)}`
   const triggerPlaceholder = ratesLoading ? 'Loading…' : ratesError ? 'Unavailable' : 'Select…'
 
   return (

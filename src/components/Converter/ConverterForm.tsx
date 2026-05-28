@@ -48,7 +48,7 @@ export function ConverterForm({ rates, ratesLoading, ratesError, retryRates }: C
     setBreakdown(calculateConversion({ amount, fee, rate }))
   }
 
-  const currencyLabel = (code: string) => `${getSymbol(code)} ${code} — ${getName(code)}`
+  const currencyLabel = (code: string) => `${getSymbol(code)} ${getName(code)}`
   const triggerPlaceholder = ratesLoading ? 'Loading…' : ratesError ? 'Unavailable' : 'Select…'
 
   return (
