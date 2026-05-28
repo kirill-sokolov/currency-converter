@@ -23,9 +23,9 @@ export function ConverterForm({ rates, ratesLoading, ratesError, retryRates }: C
   const [breakdown, setBreakdown] = useState<ConversionBreakdown | null>(null)
 
   const currencies = rates ? Object.keys(rates).sort() : []
+  const fromCurrencies = currencies.filter((c) => c !== to)
+  const toCurrencies = currencies.filter((c) => c !== from)
   const formDisabled = ratesLoading || !!ratesError
-  const sameError = from === to ? 'From and To currencies must be different.' : null
-  const convertDisabled = formDisabled || !!sameError
 
   const handleConvert = (e: React.FormEvent) => {
     e.preventDefault()
@@ -98,7 +98,7 @@ export function ConverterForm({ rates, ratesLoading, ratesError, retryRates }: C
             >
               <Select.Trigger placeholder={triggerPlaceholder} />
               <Select.Content>
-                {currencies.map((code) => (
+                {fromCurrencies.map((code) => (
                   <Select.Item key={code} value={code}>{formatCurrencyOption(code)}</Select.Item>
                 ))}
               </Select.Content>
@@ -116,20 +116,20 @@ export function ConverterForm({ rates, ratesLoading, ratesError, retryRates }: C
             >
               <Select.Trigger placeholder={triggerPlaceholder} />
               <Select.Content>
-                {currencies.map((code) => (
+                {toCurrencies.map((code) => (
                   <Select.Item key={code} value={code}>{formatCurrencyOption(code)}</Select.Item>
                 ))}
               </Select.Content>
             </Select.Root>
           </Box>
 
-          <Button type="submit" disabled={convertDisabled}>
+          <Button type="submit" disabled={formDisabled}>
             {ratesLoading ? <Spinner /> : 'Convert'}
           </Button>
         </Flex>
 
-        {(error ?? sameError) && (
-          <Text color="red" size="2" as="p" mt="2">{error ?? sameError}</Text>
+        {error && (
+          <Text color="red" size="2" as="p" mt="2">{error}</Text>
         )}
       </form>
 

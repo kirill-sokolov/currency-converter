@@ -18,6 +18,8 @@ export function AddFeeForm({ rates, ratesLoading, ratesError, retryRates }: AddF
   const [error, setError] = useState<string | null>(null)
 
   const currencies = rates ? Object.keys(rates).sort() : []
+  const fromCurrencies = currencies.filter((c) => c !== to)
+  const toCurrencies = currencies.filter((c) => c !== from)
   const disabled = ratesLoading || !!ratesError
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -26,10 +28,6 @@ export function AddFeeForm({ rates, ratesLoading, ratesError, retryRates }: AddF
 
     if (!from || !to) {
       setError('Please select both currencies.')
-      return
-    }
-    if (from === to) {
-      setError('From and To currencies must be different.')
       return
     }
 
@@ -67,7 +65,7 @@ export function AddFeeForm({ rates, ratesLoading, ratesError, retryRates }: AddF
             <Select.Root value={from} onValueChange={setFrom} disabled={disabled}>
               <Select.Trigger placeholder={triggerPlaceholder} />
               <Select.Content>
-                {currencies.map((code) => (
+                {fromCurrencies.map((code) => (
                   <Select.Item key={code} value={code}>
                     {formatCurrencyOption(code)}
                   </Select.Item>
@@ -83,7 +81,7 @@ export function AddFeeForm({ rates, ratesLoading, ratesError, retryRates }: AddF
             <Select.Root value={to} onValueChange={setTo} disabled={disabled}>
               <Select.Trigger placeholder={triggerPlaceholder} />
               <Select.Content>
-                {currencies.map((code) => (
+                {toCurrencies.map((code) => (
                   <Select.Item key={code} value={code}>
                     {formatCurrencyOption(code)}
                   </Select.Item>
