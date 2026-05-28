@@ -1,3 +1,6 @@
+import { Box, Text } from '@radix-ui/themes'
+import { ConverterForm } from './ConverterForm'
+
 interface ConverterProps {
   rates: Record<string, number> | null
   ratesLoading: boolean
@@ -5,17 +8,11 @@ interface ConverterProps {
   retryRates: () => void
 }
 
-export function Converter({ ratesLoading, ratesError, retryRates }: ConverterProps) {
+export function Converter(props: ConverterProps) {
   return (
-    <div>
-      <h2>Converter</h2>
-      {ratesLoading && <p>Loading rates…</p>}
-      {ratesError && (
-        <div>
-          <p>Error: {ratesError}</p>
-          <button onClick={retryRates}>Retry</button>
-        </div>
-      )}
-    </div>
+    <Box p="4">
+      <Text size="5" weight="bold" as="p" mb="4">Converter</Text>
+      <ConverterForm {...props} />
+    </Box>
   )
 }
