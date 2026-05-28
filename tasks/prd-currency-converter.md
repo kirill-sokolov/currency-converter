@@ -29,6 +29,9 @@ rates and the configured fees.
 - [ ] Zustand and `@radix-ui/themes` are installed
 - [ ] TypeScript strict mode enabled, `npm run typecheck` passes
 - [ ] `src/constants/currencies.ts` exports `currencyMeta: Record<string, { symbol: string; name: string }>` covering at least EUR, USD, GBP, JPY, CHF, SEK, NOK, DKK, PLN, CZK with a `getSymbol(code)` / `getName(code)` helper that falls back to the code string
+- [ ] `currencyMeta` is used only for display (symbols, names) — it is never the source of available currencies
+- [ ] `App.tsx` fetches ECB rates on mount and passes `rates`, `ratesLoading`, `ratesError` as props to both tabs
+- [ ] Available currency lists in all selectors (Fee Manager and Converter) are derived exclusively from `Object.keys(rates)`
 
 ### US-002: Zustand fee store
 **Description:** As a developer, I need a Zustand store that holds the fee map and persists it to localStorage.
@@ -57,8 +60,8 @@ rates and the configured fees.
 
 **Acceptance Criteria:**
 - [ ] Inline form (or row at the bottom of the table) with: From selector, To selector, Fee input
-- [ ] From and To selectors are populated from ECB-supported currencies (or `currencyMeta` keys as fallback)
-- [ ] Fee input accepts decimals; validates that value is a number between 0 and 1 (exclusive)
+- [ ] From and To selectors are populated from `Object.keys(rates)` passed from App — never from `currencyMeta`
+- [ ] Fee input accepts decimals; validates that value is a number where `0 <= fee < 1` (0 is allowed, 1 and above are not)
 - [ ] Submitting calls `setFee(from, to, fee)` and clears the form
 - [ ] Saving a fee for an existing pair overwrites it (upsert behaviour)
 - [ ] Cannot set From === To (validation error shown)
@@ -90,22 +93,24 @@ rates and the configured fees.
 **Description:** As a developer, I need a pure function that applies the fee formula and returns a full numeric breakdown so that the Converter component stays thin and the logic is unit-testable.
 
 **Acceptance Criteria:**
-- [ ] `src/utils/conversion.ts` exports `calculateConversion(amount: number, fee: number, rate: number): ConversionBreakdown`
-- [ ] `ConversionBreakdown` shape: `{ originalAmount, fee, feeAmount, amountAfterFee, rate, result }` — all `number`, no formatted strings
+- [ ] `src/utils/conversion.ts` exports `calculateConversion(input: ConversionInput): ConversionBreakdown`
+- [ ] `ConversionInput` type: `{ amount: number; fee: number; rate: number }`
+- [ ] `ConversionBreakdown` type: `{ originalAmount: number; fee: number; feeAmount: number; amountAfterFee: number; rate: number; result: number }` — no formatted strings
 - [ ] Formula: `feeAmount = amount * fee`, `amountAfterFee = amount - feeAmount`, `result = amountAfterFee * rate`
 - [ ] Function is pure: no side effects, no imports from React/Zustand/ECB service
-- [ ] Unit tests cover: standard case, default fee (0.01), fee = 0, same-currency (rate = 1)
+- [ ] Unit tests cover: standard case, default fee (0.01), fee = 0
 - [ ] `npm run typecheck` passes, `npm test` passes
 
 ### US-008: Converter tab — form
 **Description:** As a user, I want to enter an amount, select From and To currencies, and see the converted result so that I can calculate conversions with fees applied.
 
 **Acceptance Criteria:**
-- [ ] "Converter" tab fetches ECB rates on mount (`useEffect`) and stores them in local component state
-- [ ] Currency selectors are populated from the loaded rates response (all ECB-supported currencies); selectors are disabled while rates are loading
+- [ ] "Converter" tab receives `rates`, `ratesLoading`, `ratesError` as props from App
+- [ ] Currency selectors are populated from `Object.keys(rates)`; selectors are disabled while `ratesLoading` is true
 - [ ] EUR is pre-selected as the default From currency; USD as default To
 - [ ] Amount input rejects non-numeric input; shows validation message if empty on submit
-- [ ] Clicking Convert uses already-loaded rates — no new fetch on click; derives rate via `deriveRate`, looks up fee via `getFee`, calls `calculateConversion`
+- [ ] From and To selectors cannot be the same currency — Convert button is disabled and an error shown if they match
+- [ ] Clicking Convert derives rate via `deriveRate(rates, from, to)`, looks up fee via `getFee(from, to)`, calls `calculateConversion({ amount, fee, rate })`
 - [ ] `npm run typecheck` passes
 
 ### US-009: Converter tab — result display
@@ -115,9 +120,8 @@ rates and the configured fees.
 - [ ] Result section renders a `ConversionBreakdown` object: original amount, fee %, fee amount, amount after fee, rate, final result with currency symbol
 - [ ] Example: "100 EUR → 84.50 GBP (fee: 1%, fee amount: 1 EUR, after fee: 99 EUR, rate: 0.8535)"
 - [ ] Formatting (symbols, decimals, percentages) lives in the component/formatter layer — not in `calculateConversion`
-- [ ] While rates are loading on mount a spinner is shown and the Convert button is disabled
-- [ ] If the rates fetch fails an error message is shown inline (not a crash)
-- [ ] Converting the same currency to itself (e.g. EUR → EUR) still works (rate = 1)
+- [ ] While `ratesLoading` is true a spinner is shown and the Convert button is disabled
+- [ ] If `ratesError` is set an error message is shown inline (not a crash)
 - [ ] Verify in browser: result renders correctly for EUR→USD, GBP→USD, and JPY→CHF
 
 ### US-010: Docker setup
@@ -146,11 +150,11 @@ rates and the configured fees.
 - **FR-1:** Fee storage shape is `Record<string, Record<string, number>>` keyed `fees[from][to]`
 - **FR-2:** `getFee(from, to)` returns the stored fee or `0.01` if not configured
 - **FR-3:** Fees are persisted to localStorage under key `currency-fees` via Zustand persist
-- **FR-4:** `calculateConversion(amount, fee, rate)` returns `ConversionBreakdown` with raw numbers only — no formatted strings
+- **FR-4:** `calculateConversion(input: ConversionInput): ConversionBreakdown` — pure function, raw numbers only, no formatted strings
 - **FR-5:** Conversion formula: `feeAmount = amount * fee`, `amountAfterFee = amount - feeAmount`, `result = amountAfterFee * rate`
-- **FR-6:** Exchange rates are fetched from ECB on Converter mount; selectors are populated from the loaded rates; Convert uses already-loaded rates without re-fetching
+- **FR-6:** ECB rates are fetched once in `App.tsx` on mount; `rates`, `ratesLoading`, `ratesError` are passed as props to both Fee Manager and Converter tabs
 - **FR-7:** Cross-currency rate: `rate(X→Y) = (1 / rates[X]) * rates[Y]`
-- **FR-8:** All supported ECB currencies are available in the Converter selectors
+- **FR-8:** Available currencies in all selectors come exclusively from `Object.keys(rates)`; `currencyMeta` is used only for display labels
 - **FR-9:** Currency metadata provides symbol and name; unknown codes fall back to the ISO code
 - **FR-10:** The Vite proxy target is `https://www.ecb.europa.eu`; in Docker, nginx handles the proxy
 - **FR-11:** `npm test` runs unit tests; `npm run typecheck` runs `tsc --noEmit`
@@ -231,7 +235,7 @@ src/
     feeStore.ts         # Zustand store with persist
   utils/
     rates.ts            # deriveRate() pure function
-    conversion.ts       # calculateConversion() pure function + ConversionBreakdown type
+    conversion.ts       # ConversionInput, ConversionBreakdown types + calculateConversion() pure function
   components/
     FeeManager/
       FeeTable.tsx
@@ -239,7 +243,7 @@ src/
     Converter/
       ConverterForm.tsx
       ConversionResult.tsx
-  App.tsx               # Radix UI Tabs wrapping both views
+  App.tsx               # fetchRates() on mount → passes rates/ratesLoading/ratesError to both tabs; Radix UI Tabs
   main.tsx
 tasks/
   prd-currency-converter.md
