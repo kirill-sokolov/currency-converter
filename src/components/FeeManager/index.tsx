@@ -81,6 +81,10 @@ export function FeeManager(props: FeeManagerProps) {
         </Table.Root>
       )}
 
+      <Text as="p" size="1" color="gray" mt="3">
+        Pairs without a configured fee use the default of 1% (0.01).
+      </Text>
+
       <Separator my="4" size="4" />
       <AddFeeForm {...props} editTarget={editTarget} onEditDone={() => setEditTarget(null)} />
     </Box>
