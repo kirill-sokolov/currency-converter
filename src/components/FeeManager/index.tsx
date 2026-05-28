@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Box, Button, Flex, Separator, Table, Text } from '@radix-ui/themes'
+import { Box, Button, Flex, Table, Text } from '@radix-ui/themes'
 import { getSymbol } from '../../constants/currencies'
 import { useFeeStore } from '../../store/feeStore'
 import { AddFeeForm } from './AddFeeForm'
+import styles from './FeeManager.module.css'
 
 interface FeeManagerProps {
   rates: Record<string, number> | null
@@ -85,8 +86,9 @@ export function FeeManager(props: FeeManagerProps) {
         Pairs without a configured fee use the default of 1% (0.01).
       </Text>
 
-      <Separator my="4" size="4" />
-      <AddFeeForm {...props} editTarget={editTarget} onEditDone={() => setEditTarget(null)} />
+      <div className={styles.stickyForm}>
+        <AddFeeForm {...props} editTarget={editTarget} onEditDone={() => setEditTarget(null)} />
+      </div>
     </Box>
   )
 }
