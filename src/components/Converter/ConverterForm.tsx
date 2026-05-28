@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Box, Button, Flex, Select, Spinner, Text, TextField } from '@radix-ui/themes'
-import { getName, getSymbol } from '../../constants/currencies'
+import { formatCurrencyOption } from '../../constants/currencies'
 import { useFeeStore } from '../../store/feeStore'
 import { calculateConversion, type ConversionBreakdown } from '../../utils/conversion'
 import { getFee } from '../../utils/fees'
@@ -48,7 +48,6 @@ export function ConverterForm({ rates, ratesLoading, ratesError, retryRates }: C
     setBreakdown(calculateConversion({ amount, fee, rate }))
   }
 
-  const currencyLabel = (code: string) => `${getSymbol(code)} ${getName(code)}`
   const triggerPlaceholder = ratesLoading ? 'Loading…' : ratesError ? 'Unavailable' : 'Select…'
 
   return (
@@ -100,7 +99,7 @@ export function ConverterForm({ rates, ratesLoading, ratesError, retryRates }: C
               <Select.Trigger placeholder={triggerPlaceholder} />
               <Select.Content>
                 {currencies.map((code) => (
-                  <Select.Item key={code} value={code}>{currencyLabel(code)}</Select.Item>
+                  <Select.Item key={code} value={code}>{formatCurrencyOption(code)}</Select.Item>
                 ))}
               </Select.Content>
             </Select.Root>
@@ -118,7 +117,7 @@ export function ConverterForm({ rates, ratesLoading, ratesError, retryRates }: C
               <Select.Trigger placeholder={triggerPlaceholder} />
               <Select.Content>
                 {currencies.map((code) => (
-                  <Select.Item key={code} value={code}>{currencyLabel(code)}</Select.Item>
+                  <Select.Item key={code} value={code}>{formatCurrencyOption(code)}</Select.Item>
                 ))}
               </Select.Content>
             </Select.Root>

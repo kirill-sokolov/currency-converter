@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Box, Button, Flex, Select, Text, TextField } from '@radix-ui/themes'
-import { getName, getSymbol } from '../../constants/currencies'
+import { formatCurrencyOption } from '../../constants/currencies'
 import { useFeeStore } from '../../store/feeStore'
 
 interface AddFeeFormProps {
@@ -45,7 +45,6 @@ export function AddFeeForm({ rates, ratesLoading, ratesError, retryRates }: AddF
     setFeeInput('')
   }
 
-  const currencyLabel = (code: string) => `${getSymbol(code)} ${getName(code)}`
   const triggerPlaceholder = ratesLoading ? 'Loading…' : ratesError ? 'Unavailable' : 'Select…'
 
   return (
@@ -70,7 +69,7 @@ export function AddFeeForm({ rates, ratesLoading, ratesError, retryRates }: AddF
               <Select.Content>
                 {currencies.map((code) => (
                   <Select.Item key={code} value={code}>
-                    {currencyLabel(code)}
+                    {formatCurrencyOption(code)}
                   </Select.Item>
                 ))}
               </Select.Content>
@@ -86,7 +85,7 @@ export function AddFeeForm({ rates, ratesLoading, ratesError, retryRates }: AddF
               <Select.Content>
                 {currencies.map((code) => (
                   <Select.Item key={code} value={code}>
-                    {currencyLabel(code)}
+                    {formatCurrencyOption(code)}
                   </Select.Item>
                 ))}
               </Select.Content>

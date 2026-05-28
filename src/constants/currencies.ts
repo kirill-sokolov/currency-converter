@@ -18,3 +18,8 @@ export function getSymbol(code: string): string {
 export function getName(code: string): string {
   return currencyMeta[code]?.name ?? code
 }
+
+export function formatCurrencyOption(code: string): string {
+  const meta = currencyMeta[code]
+  return meta ? `${meta.symbol} ${meta.name}` : code
+}
