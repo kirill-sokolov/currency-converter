@@ -1,6 +1,7 @@
-import { Box, Button, Table, Text } from '@radix-ui/themes'
+import { Box, Button, Separator, Table, Text } from '@radix-ui/themes'
 import { getSymbol } from '../../constants/currencies'
 import { useFeeStore } from '../../store/feeStore'
+import { AddFeeForm } from './AddFeeForm'
 
 interface FeeManagerProps {
   rates: Record<string, number> | null
@@ -17,7 +18,7 @@ function formatCurrency(code: string): string {
   return `${getSymbol(code)} ${code}`
 }
 
-export function FeeManager({ ratesLoading, ratesError, retryRates }: FeeManagerProps) {
+export function FeeManager(props: FeeManagerProps) {
   const fees = useFeeStore((state) => state.fees)
   const removeFee = useFeeStore((state) => state.removeFee)
 
@@ -28,14 +29,6 @@ export function FeeManager({ ratesLoading, ratesError, retryRates }: FeeManagerP
   return (
     <Box p="4">
       <Text size="5" weight="bold" as="p" mb="4">Fee Manager</Text>
-
-      {ratesLoading && <Text color="gray">Loading rates…</Text>}
-      {ratesError && (
-        <Box mb="3">
-          <Text color="red">Error: {ratesError}</Text>
-          <Button variant="soft" ml="3" onClick={retryRates}>Retry</Button>
-        </Box>
-      )}
 
       {rows.length === 0 ? (
         <Text color="gray">No fees configured.</Text>
@@ -70,6 +63,9 @@ export function FeeManager({ ratesLoading, ratesError, retryRates }: FeeManagerP
           </Table.Body>
         </Table.Root>
       )}
+
+      <Separator my="4" size="4" />
+      <AddFeeForm {...props} />
     </Box>
   )
 }
