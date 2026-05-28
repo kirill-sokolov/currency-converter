@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Box, Button, Flex, Select, Spinner, Text, TextField } from '@radix-ui/themes'
 import { formatCurrencyOption } from '../../constants/currencies'
 import { useFeeStore } from '../../store/feeStore'
@@ -27,7 +27,7 @@ export function ConverterForm({ rates, ratesLoading, ratesError, retryRates }: C
   const toCurrencies = currencies.filter((c) => c !== from)
   const formDisabled = ratesLoading || !!ratesError
 
-  const handleConvert = (e: React.FormEvent) => {
+  const handleConvert = (e: FormEvent) => {
     e.preventDefault()
     setError(null)
     setBreakdown(null)

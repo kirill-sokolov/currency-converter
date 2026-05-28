@@ -1,4 +1,5 @@
-import { Box, Button, Separator, Table, Text } from '@radix-ui/themes'
+import { useState } from 'react'
+import { Box, Button, Flex, Separator, Table, Text } from '@radix-ui/themes'
 import { getSymbol } from '../../constants/currencies'
 import { useFeeStore } from '../../store/feeStore'
 import { AddFeeForm } from './AddFeeForm'
@@ -8,6 +9,12 @@ interface FeeManagerProps {
   ratesLoading: boolean
   ratesError: string | null
   retryRates: () => void
+}
+
+export interface EditTarget {
+  from: string
+  to: string
+  fee: number
 }
 
 function formatFee(fee: number): string {
@@ -21,6 +28,7 @@ function formatCurrency(code: string): string {
 export function FeeManager(props: FeeManagerProps) {
   const fees = useFeeStore((state) => state.fees)
   const removeFee = useFeeStore((state) => state.removeFee)
+  const [editTarget, setEditTarget] = useState<EditTarget | null>(null)
 
   const rows = Object.entries(fees).flatMap(([from, toMap]) =>
     Object.entries(toMap).map(([to, fee]) => ({ from, to, fee })),
@@ -49,14 +57,23 @@ export function FeeManager(props: FeeManagerProps) {
                 <Table.Cell>{formatCurrency(to)}</Table.Cell>
                 <Table.Cell>{formatFee(fee)}</Table.Cell>
                 <Table.Cell>
-                  <Button
-                    variant="soft"
-                    color="red"
-                    size="1"
-                    onClick={() => removeFee(from, to)}
-                  >
-                    Delete
-                  </Button>
+                  <Flex gap="2">
+                    <Button
+                      variant="soft"
+                      size="1"
+                      onClick={() => setEditTarget({ from, to, fee })}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="soft"
+                      color="red"
+                      size="1"
+                      onClick={() => removeFee(from, to)}
+                    >
+                      Delete
+                    </Button>
+                  </Flex>
                 </Table.Cell>
               </Table.Row>
             ))}
@@ -65,7 +82,7 @@ export function FeeManager(props: FeeManagerProps) {
       )}
 
       <Separator my="4" size="4" />
-      <AddFeeForm {...props} />
+      <AddFeeForm {...props} editTarget={editTarget} onEditDone={() => setEditTarget(null)} />
     </Box>
   )
 }
