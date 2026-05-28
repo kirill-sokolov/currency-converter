@@ -30,19 +30,30 @@ rates and the configured fees.
 - [ ] TypeScript strict mode enabled, `npm run typecheck` passes
 - [ ] `src/constants/currencies.ts` exports `currencyMeta: Record<string, { symbol: string; name: string }>` covering at least EUR, USD, GBP, JPY, CHF, SEK, NOK, DKK, PLN, CZK with a `getSymbol(code)` / `getName(code)` helper that falls back to the code string
 - [ ] `currencyMeta` is used only for display (symbols, names) — it is never the source of available currencies
-- [ ] `App.tsx` fetches ECB rates on mount and passes `rates`, `ratesLoading`, `ratesError` as props to both tabs
+- [ ] `App.tsx` fetches ECB rates on mount and passes typed props to both tabs: `rates: Record<string, number> | null`, `ratesLoading: boolean`, `ratesError: string | null`
+- [ ] `App.tsx` also passes a `retryRates: () => void` prop that re-triggers the fetch; tabs render a Retry button when `ratesError` is set
 - [ ] Available currency lists in all selectors (Fee Manager and Converter) are derived exclusively from `Object.keys(rates)`
 
 ### US-002: Zustand fee store
 **Description:** As a developer, I need a Zustand store that holds the fee map and persists it to localStorage.
 
 **Acceptance Criteria:**
-- [ ] Store shape: `fees: Record<string, Record<string, number>>`
-- [ ] Actions: `setFee(from, to, fee)`, `removeFee(from, to)`
-- [ ] `getFee(from, to): number` selector returns stored fee or `0.01` default
+- [ ] Store shape: `{ fees: FeeMap; setFee(from, to, fee): void; removeFee(from, to): void }` — no getters or selectors inside the store
+- [ ] `FeeMap` type: `Record<string, Record<string, number>>`
 - [ ] Store is persisted via Zustand `persist` middleware under key `currency-fees`
 - [ ] Reloading the page preserves configured fees
 - [ ] `npm run typecheck` passes
+
+### US-002b: getFee pure function
+**Description:** As a developer, I need a pure function to look up a fee for a currency pair so that the logic is testable without a Zustand store.
+
+**Acceptance Criteria:**
+- [ ] `src/utils/fees.ts` exports `getFee(fees: FeeMap, from: string, to: string): number`
+- [ ] Returns `fees[from]?.[to]` if present, otherwise `0.01`
+- [ ] Pure function — no Zustand imports, no side effects
+- [ ] Unit tests cover: configured pair, unconfigured pair (default 0.01), missing `from` key
+- [ ] Unit test explicitly verifies directional isolation: `getFee(fees, 'EUR', 'GBP')` and `getFee(fees, 'GBP', 'EUR')` return different values when configured separately
+- [ ] `npm run typecheck` passes, `npm test` passes
 
 ### US-003: Fee Manager tab — list & delete fees
 **Description:** As an operator, I want to see all configured fees in a table and delete individual entries so that I can manage the fee schedule.
@@ -61,6 +72,8 @@ rates and the configured fees.
 **Acceptance Criteria:**
 - [ ] Inline form (or row at the bottom of the table) with: From selector, To selector, Fee input
 - [ ] From and To selectors are populated from `Object.keys(rates)` passed from App — never from `currencyMeta`
+- [ ] If rates are loading or unavailable, currency selectors are disabled and show a loading/error-safe placeholder
+- [ ] Add fee form is disabled entirely while rates are loading or if rates failed to load; if `ratesError` is set a Retry button is shown that calls `retryRates()`
 - [ ] Fee input accepts decimals; validates that value is a number where `0 <= fee < 1` (0 is allowed, 1 and above are not)
 - [ ] Submitting calls `setFee(from, to, fee)` and clears the form
 - [ ] Saving a fee for an existing pair overwrites it (upsert behaviour)
@@ -73,6 +86,7 @@ rates and the configured fees.
 
 **Acceptance Criteria:**
 - [ ] `src/services/ecbRates.ts` exports `fetchRates(): Promise<Record<string, number>>`
+- [ ] Fetch uses the relative URL `/ecb-rates` — never a hardcoded hostname or port; this ensures the same code works in dev (Vite proxy) and Docker (nginx proxy_pass) without env vars
 - [ ] Result always includes `EUR: 1` as the base
 - [ ] Parsing uses `DOMParser` — no third-party XML library
 - [ ] Function throws a typed error if the fetch or parse fails
@@ -105,12 +119,12 @@ rates and the configured fees.
 **Description:** As a user, I want to enter an amount, select From and To currencies, and see the converted result so that I can calculate conversions with fees applied.
 
 **Acceptance Criteria:**
-- [ ] "Converter" tab receives `rates`, `ratesLoading`, `ratesError` as props from App
-- [ ] Currency selectors are populated from `Object.keys(rates)`; selectors are disabled while `ratesLoading` is true
+- [ ] "Converter" tab receives `rates: Record<string, number> | null`, `ratesLoading: boolean`, `ratesError: string | null` as props from App
+- [ ] Currency selectors are populated from `Object.keys(rates)`; selectors are disabled and show a placeholder while `ratesLoading` is true or `ratesError` is set
 - [ ] EUR is pre-selected as the default From currency; USD as default To
 - [ ] Amount input rejects non-numeric input; shows validation message if empty on submit
 - [ ] From and To selectors cannot be the same currency — Convert button is disabled and an error shown if they match
-- [ ] Clicking Convert derives rate via `deriveRate(rates, from, to)`, looks up fee via `getFee(from, to)`, calls `calculateConversion({ amount, fee, rate })`
+- [ ] Clicking Convert derives rate via `deriveRate(rates, from, to)`, looks up fee via `getFee(fees, from, to)`, calls `calculateConversion({ amount, fee, rate })`
 - [ ] `npm run typecheck` passes
 
 ### US-009: Converter tab — result display
@@ -121,7 +135,7 @@ rates and the configured fees.
 - [ ] Example: "100 EUR → 84.50 GBP (fee: 1%, fee amount: 1 EUR, after fee: 99 EUR, rate: 0.8535)"
 - [ ] Formatting (symbols, decimals, percentages) lives in the component/formatter layer — not in `calculateConversion`
 - [ ] While `ratesLoading` is true a spinner is shown and the Convert button is disabled
-- [ ] If `ratesError` is set an error message is shown inline (not a crash)
+- [ ] If `ratesError` is set an error message and a Retry button are shown; clicking Retry calls `retryRates()`
 - [ ] Verify in browser: result renders correctly for EUR→USD, GBP→USD, and JPY→CHF
 
 ### US-010: Docker setup
@@ -148,15 +162,15 @@ rates and the configured fees.
 ## Functional Requirements
 
 - **FR-1:** Fee storage shape is `Record<string, Record<string, number>>` keyed `fees[from][to]`
-- **FR-2:** `getFee(from, to)` returns the stored fee or `0.01` if not configured
+- **FR-2:** `getFee(fees, from, to)` is a pure function in `utils/fees.ts` — returns `fees[from]?.[to]` or `0.01` default; not part of the Zustand store
 - **FR-3:** Fees are persisted to localStorage under key `currency-fees` via Zustand persist
 - **FR-4:** `calculateConversion(input: ConversionInput): ConversionBreakdown` — pure function, raw numbers only, no formatted strings
 - **FR-5:** Conversion formula: `feeAmount = amount * fee`, `amountAfterFee = amount - feeAmount`, `result = amountAfterFee * rate`
-- **FR-6:** ECB rates are fetched once in `App.tsx` on mount; `rates`, `ratesLoading`, `ratesError` are passed as props to both Fee Manager and Converter tabs
+- **FR-6:** ECB rates are fetched once in `App.tsx` on mount; props `rates: Record<string, number> | null`, `ratesLoading: boolean`, `ratesError: string | null`, `retryRates: () => void` are passed to both tabs; tabs show a Retry button when `ratesError` is set
 - **FR-7:** Cross-currency rate: `rate(X→Y) = (1 / rates[X]) * rates[Y]`
-- **FR-8:** Available currencies in all selectors come exclusively from `Object.keys(rates)`; `currencyMeta` is used only for display labels
+- **FR-8:** Available currencies in all selectors come exclusively from `Object.keys(rates)`; `currencyMeta` is used only for display labels; all selectors and the add-fee form are disabled with a placeholder when rates are loading or failed
 - **FR-9:** Currency metadata provides symbol and name; unknown codes fall back to the ISO code
-- **FR-10:** The Vite proxy target is `https://www.ecb.europa.eu`; in Docker, nginx handles the proxy
+- **FR-10:** The client always fetches the relative URL `/ecb-rates` — no hardcoded hostname or port; in dev Vite proxy handles it, in Docker nginx `proxy_pass` handles it; no env vars or build-time differences required
 - **FR-11:** `npm test` runs unit tests; `npm run typecheck` runs `tsc --noEmit`
 
 ---
@@ -199,6 +213,15 @@ rates and the configured fees.
 ```
 Parse with: `doc.querySelectorAll('Cube[currency]')` → map to `{ [currency]: parseFloat(rate) }` + add `EUR: 1`.
 
+### Proxy strategy
+
+The client always fetches the relative URL `/ecb-rates`. The proxy layer is swapped per environment — the application code never changes:
+
+| Environment | Who handles `/ecb-rates` |
+|---|---|
+| Dev (`npm run dev`) | Vite dev server proxy |
+| Docker | nginx `proxy_pass` |
+
 ### Vite proxy config (dev)
 ```ts
 // vite.config.ts
@@ -207,7 +230,7 @@ server: {
     '/ecb-rates': {
       target: 'https://www.ecb.europa.eu',
       changeOrigin: true,
-      rewrite: (path) => '/stats/eurofxref/eurofxref-daily.xml',
+      rewrite: () => '/stats/eurofxref/eurofxref-daily.xml',
     },
   },
 }
@@ -234,6 +257,7 @@ src/
   store/
     feeStore.ts         # Zustand store with persist
   utils/
+    fees.ts             # FeeMap type + getFee(fees, from, to) pure function
     rates.ts            # deriveRate() pure function
     conversion.ts       # ConversionInput, ConversionBreakdown types + calculateConversion() pure function
   components/
@@ -259,7 +283,8 @@ vite.config.ts
 ## Success Metrics
 
 - `npm run dev` → app loads, both tabs render without console errors
-- `npm test` → all unit tests pass (at minimum: `deriveRate`, `calculateConversion`, `getFee`)
+- `npm test` → all unit tests pass (at minimum: `getFee`, `deriveRate`, `calculateConversion`)
+- Unit test explicitly verifies that `EUR→GBP` and `GBP→EUR` are treated as separate fee entries (key requirement from spec)
 - `npm run typecheck` → zero type errors
 - `docker build && docker run` → app accessible on port 8080, conversion works end-to-end
 
