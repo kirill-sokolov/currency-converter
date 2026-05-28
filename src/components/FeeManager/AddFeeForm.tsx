@@ -39,8 +39,8 @@ export function AddFeeForm({
   }, [editTarget])
 
   const currencies = rates ? Object.keys(rates).sort() : []
-  const fromCurrencies = currencies.filter((c) => c !== to)
-  const toCurrencies = currencies.filter((c) => c !== from)
+  const fromCurrencies = currencies.filter((currency) => currency !== to)
+  const toCurrencies = currencies.filter((currency) => currency !== from)
   const selectDisabled = ratesLoading || !!ratesError || isEditing
   const submitDisabled = ratesLoading || !!ratesError
 

@@ -31,8 +31,8 @@ export function FeeManager(props: FeeManagerProps) {
   const removeFee = useFeeStore((state) => state.removeFee)
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null)
 
-  const rows = Object.entries(fees).flatMap(([from, toMap]) =>
-    Object.entries(toMap).map(([to, fee]) => ({ from, to, fee })),
+  const rows = Object.entries(fees).flatMap(([from, feesByDestination]) =>
+    Object.entries(feesByDestination).map(([to, fee]) => ({ from, to, fee })),
   )
 
   return (

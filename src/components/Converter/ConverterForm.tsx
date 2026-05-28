@@ -23,8 +23,8 @@ export function ConverterForm({ rates, ratesLoading, ratesError, retryRates }: C
   const [breakdown, setBreakdown] = useState<ConversionBreakdown | null>(null)
 
   const currencies = rates ? Object.keys(rates).sort() : []
-  const fromCurrencies = currencies.filter((c) => c !== to)
-  const toCurrencies = currencies.filter((c) => c !== from)
+  const fromCurrencies = currencies.filter((currency) => currency !== to)
+  const toCurrencies = currencies.filter((currency) => currency !== from)
   const formDisabled = ratesLoading || !!ratesError
 
   const handleConvert = (e: FormEvent) => {
@@ -76,9 +76,9 @@ export function ConverterForm({ rates, ratesLoading, ratesError, retryRates }: C
               placeholder="100"
               value={amountInput}
               onChange={(e) => {
-                const v = e.target.value
-                if (v === '' || /^\d*\.?\d*$/.test(v)) {
-                  setAmountInput(v)
+                const inputValue = e.target.value
+                if (inputValue === '' || /^\d*\.?\d*$/.test(inputValue)) {
+                  setAmountInput(inputValue)
                   setBreakdown(null)
                 }
               }}
@@ -93,7 +93,7 @@ export function ConverterForm({ rates, ratesLoading, ratesError, retryRates }: C
             </Text>
             <Select.Root
               value={from}
-              onValueChange={(v) => { setFrom(v); setBreakdown(null) }}
+              onValueChange={(currency) => { setFrom(currency); setBreakdown(null) }}
               disabled={formDisabled}
             >
               <Select.Trigger placeholder={triggerPlaceholder} />
@@ -111,7 +111,7 @@ export function ConverterForm({ rates, ratesLoading, ratesError, retryRates }: C
             </Text>
             <Select.Root
               value={to}
-              onValueChange={(v) => { setTo(v); setBreakdown(null) }}
+              onValueChange={(currency) => { setTo(currency); setBreakdown(null) }}
               disabled={formDisabled}
             >
               <Select.Trigger placeholder={triggerPlaceholder} />
