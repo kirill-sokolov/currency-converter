@@ -35,7 +35,8 @@ export async function fetchRates(): Promise<Record<string, number>> {
   doc.querySelectorAll('Cube[currency]').forEach((node) => {
     const currency = node.getAttribute('currency')
     const rate = node.getAttribute('rate')
-    if (currency && rate) rates[currency] = parseFloat(rate)
+    const parsed = Number(rate)
+    if (currency && isFinite(parsed)) rates[currency] = parsed
   })
 
   if (Object.keys(rates).length <= 1) {

@@ -32,7 +32,7 @@ export function ConverterForm({ rates, ratesLoading, ratesError, retryRates }: C
     setError(null)
     setBreakdown(null)
 
-    const amount = parseFloat(amountInput)
+    const amount = Number(amountInput)
     if (!amountInput.trim() || isNaN(amount)) {
       setError('Please enter a valid amount.')
       return

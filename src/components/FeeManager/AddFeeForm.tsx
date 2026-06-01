@@ -60,7 +60,7 @@ export function AddFeeForm({
       return
     }
 
-    const fee = parseFloat(feeInput)
+    const fee = Number(feeInput)
     if (isNaN(fee) || fee < 0 || fee >= 1) {
       setError('Fee must be a number ≥ 0 and < 1 (e.g. 0.05 for 5%).')
       return
