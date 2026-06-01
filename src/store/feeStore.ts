@@ -23,6 +23,13 @@ export const useFeeStore = create<FeeStore>()(
         set((state) => {
           const fromFees = { ...state.fees[from] }
           delete fromFees[to]
+
+          if (Object.keys(fromFees).length === 0) {
+            const fees = { ...state.fees }
+            delete fees[from]
+            return { fees }
+          }
+
           return { fees: { ...state.fees, [from]: fromFees } }
         }),
     }),
