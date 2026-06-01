@@ -9,7 +9,7 @@ export default function App() {
   const [ratesLoading, setRatesLoading] = useState(true)
   const [ratesError, setRatesError] = useState<string | null>(null)
 
-  const loadRates = useCallback(async () => {
+  const retryRates = useCallback(async () => {
     setRatesLoading(true)
     setRatesError(null)
     try {
@@ -22,10 +22,17 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    void loadRates()
-  }, [loadRates])
+    let cancelled = false
+    setRatesLoading(true)
+    setRatesError(null)
+    fetchRates()
+      .then((data) => { if (!cancelled) setRates(data) })
+      .catch((e) => { if (!cancelled) setRatesError(e instanceof Error ? e.message : 'Failed to fetch rates') })
+      .finally(() => { if (!cancelled) setRatesLoading(false) })
+    return () => { cancelled = true }
+  }, [])
 
-  const tabProps = { rates, ratesLoading, ratesError, retryRates: loadRates }
+  const tabProps = { rates, ratesLoading, ratesError, retryRates }
 
   return (
     <Tabs.Root defaultValue="converter">
