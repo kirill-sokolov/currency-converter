@@ -62,7 +62,7 @@ export function ConverterForm({ rates, ratesLoading, ratesError, retryRates }: C
       {ratesError && (
         <Flex align="center" gap="2" mb="3">
           <Text color="red" size="2">Failed to load rates: {ratesError}</Text>
-          <Button variant="soft" size="1" onClick={retryRates}>Retry</Button>
+          <Button variant="soft" size="1" onClick={retryRates} disabled={ratesLoading}>Retry</Button>
         </Flex>
       )}
 

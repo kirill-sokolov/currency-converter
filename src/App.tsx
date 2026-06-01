@@ -8,7 +8,6 @@ export default function App() {
   const [rates, setRates] = useState<Record<string, number> | null>(null)
   const [ratesLoading, setRatesLoading] = useState(true)
   const [ratesError, setRatesError] = useState<string | null>(null)
-
   const retryRates = useCallback(async () => {
     setRatesLoading(true)
     setRatesError(null)
@@ -21,16 +20,7 @@ export default function App() {
     }
   }, [])
 
-  useEffect(() => {
-    let cancelled = false
-    setRatesLoading(true)
-    setRatesError(null)
-    fetchRates()
-      .then((data) => { if (!cancelled) setRates(data) })
-      .catch((e) => { if (!cancelled) setRatesError(e instanceof Error ? e.message : 'Failed to fetch rates') })
-      .finally(() => { if (!cancelled) setRatesLoading(false) })
-    return () => { cancelled = true }
-  }, [])
+  useEffect(() => { retryRates() }, [retryRates])
 
   const tabProps = { rates, ratesLoading, ratesError, retryRates }
 
