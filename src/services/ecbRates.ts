@@ -1,3 +1,5 @@
+const FETCH_TIMEOUT_MS = 10 * 1000
+
 export class RateFetchError extends Error {
   constructor(message: string) {
     super(message)
@@ -6,11 +8,16 @@ export class RateFetchError extends Error {
 }
 
 export async function fetchRates(): Promise<Record<string, number>> {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
+
   let res: Response
   try {
-    res = await fetch('/ecb-rates')
+    res = await fetch('/ecb-rates', { signal: controller.signal })
   } catch (e) {
     throw new RateFetchError(e instanceof Error ? e.message : 'Network error')
+  } finally {
+    clearTimeout(timeoutId)
   }
 
   if (!res.ok) {
