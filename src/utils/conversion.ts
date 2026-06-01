@@ -13,10 +13,14 @@ export interface ConversionBreakdown {
   result: number
 }
 
+function roundToPrecision(value: number, decimals = 10): number {
+  return parseFloat(value.toFixed(decimals))
+}
+
 export function calculateConversion(input: ConversionInput): ConversionBreakdown {
   const { amount, fee, rate } = input
-  const feeAmount = amount * fee
-  const amountAfterFee = amount - feeAmount
-  const result = amountAfterFee * rate
+  const feeAmount = roundToPrecision(amount * fee)
+  const amountAfterFee = roundToPrecision(amount - feeAmount)
+  const result = roundToPrecision(amountAfterFee * rate)
   return { originalAmount: amount, fee, feeAmount, amountAfterFee, rate, result }
 }
