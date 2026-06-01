@@ -1,3 +1,5 @@
+const ROUNDING_PRECISION = 10
+
 export interface ConversionInput {
   amount: number
   fee: number
@@ -13,7 +15,7 @@ export interface ConversionBreakdown {
   result: number
 }
 
-function roundToPrecision(value: number, decimals = 10): number {
+function roundToPrecision(value: number, decimals = ROUNDING_PRECISION): number {
   return parseFloat(value.toFixed(decimals))
 }
 
