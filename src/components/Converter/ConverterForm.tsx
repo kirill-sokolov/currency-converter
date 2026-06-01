@@ -69,10 +69,11 @@ export function ConverterForm({ rates, ratesLoading, ratesError, retryRates }: C
       <form onSubmit={handleConvert}>
         <Flex gap="3" align="end" wrap="wrap">
           <Box>
-            <Text as="label" size="1" color="gray" mb="1" style={{ display: 'block' }}>
+            <Text as="label" htmlFor="converter-amount" size="1" color="gray" mb="1" style={{ display: 'block' }}>
               Amount
             </Text>
             <TextField.Root
+              id="converter-amount"
               placeholder="100"
               value={amountInput}
               onChange={(e) => {
@@ -88,7 +89,7 @@ export function ConverterForm({ rates, ratesLoading, ratesError, retryRates }: C
           </Box>
 
           <Box>
-            <Text as="label" size="1" color="gray" mb="1" style={{ display: 'block' }}>
+            <Text as="label" htmlFor="converter-from" size="1" color="gray" mb="1" style={{ display: 'block' }}>
               From
             </Text>
             <Select.Root
@@ -96,7 +97,7 @@ export function ConverterForm({ rates, ratesLoading, ratesError, retryRates }: C
               onValueChange={(currency) => { setFrom(currency); setBreakdown(null) }}
               disabled={formDisabled}
             >
-              <Select.Trigger placeholder={triggerPlaceholder} />
+              <Select.Trigger id="converter-from" placeholder={triggerPlaceholder} />
               <Select.Content>
                 {fromCurrencies.map((code) => (
                   <Select.Item key={code} value={code}>{formatCurrencyOption(code)}</Select.Item>
@@ -106,7 +107,7 @@ export function ConverterForm({ rates, ratesLoading, ratesError, retryRates }: C
           </Box>
 
           <Box>
-            <Text as="label" size="1" color="gray" mb="1" style={{ display: 'block' }}>
+            <Text as="label" htmlFor="converter-to" size="1" color="gray" mb="1" style={{ display: 'block' }}>
               To
             </Text>
             <Select.Root
@@ -114,7 +115,7 @@ export function ConverterForm({ rates, ratesLoading, ratesError, retryRates }: C
               onValueChange={(currency) => { setTo(currency); setBreakdown(null) }}
               disabled={formDisabled}
             >
-              <Select.Trigger placeholder={triggerPlaceholder} />
+              <Select.Trigger id="converter-to" placeholder={triggerPlaceholder} />
               <Select.Content>
                 {toCurrencies.map((code) => (
                   <Select.Item key={code} value={code}>{formatCurrencyOption(code)}</Select.Item>

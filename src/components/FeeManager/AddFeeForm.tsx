@@ -94,11 +94,11 @@ export function AddFeeForm({
       <form onSubmit={handleSubmit}>
         <Flex gap="3" align="end" wrap="wrap">
           <Box>
-            <Text as="label" size="1" color="gray" mb="1" style={{ display: 'block' }}>
+            <Text as="label" htmlFor="fee-from" size="1" color="gray" mb="1" style={{ display: 'block' }}>
               From
             </Text>
             <Select.Root value={from} onValueChange={setFrom} disabled={selectDisabled}>
-              <Select.Trigger placeholder={triggerPlaceholder} />
+              <Select.Trigger id="fee-from" placeholder={triggerPlaceholder} />
               <Select.Content>
                 {fromCurrencies.map((code) => (
                   <Select.Item key={code} value={code}>
@@ -110,11 +110,11 @@ export function AddFeeForm({
           </Box>
 
           <Box>
-            <Text as="label" size="1" color="gray" mb="1" style={{ display: 'block' }}>
+            <Text as="label" htmlFor="fee-to" size="1" color="gray" mb="1" style={{ display: 'block' }}>
               To
             </Text>
             <Select.Root value={to} onValueChange={setTo} disabled={selectDisabled}>
-              <Select.Trigger placeholder={triggerPlaceholder} />
+              <Select.Trigger id="fee-to" placeholder={triggerPlaceholder} />
               <Select.Content>
                 {toCurrencies.map((code) => (
                   <Select.Item key={code} value={code}>
@@ -126,10 +126,11 @@ export function AddFeeForm({
           </Box>
 
           <Box>
-            <Text as="label" size="1" color="gray" mb="1" style={{ display: 'block' }}>
+            <Text as="label" htmlFor="fee-rate" size="1" color="gray" mb="1" style={{ display: 'block' }}>
               Fee (e.g. 0.05 for 5%)
             </Text>
             <TextField.Root
+              id="fee-rate"
               placeholder="0.01"
               value={feeInput}
               onChange={(e) => setFeeInput(e.target.value)}
